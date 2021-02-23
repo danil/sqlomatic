@@ -1,4 +1,4 @@
-Sqltee
+sqltee
 ======
 
 [![Build Status](https://cloud.drone.io/api/badges/danil/sqltee/status.svg)](https://cloud.drone.io/danil/sqltee)
