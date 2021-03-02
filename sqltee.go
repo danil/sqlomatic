@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package sqltee wrap database/sql/driver, interpolate query, log query
+// and execution time and arguments (values, named values, transaction options).
 package sqltee
 
 import (
