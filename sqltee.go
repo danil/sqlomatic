@@ -53,7 +53,7 @@ func (d *Driver) Open(name string) (driver.Conn, error) {
 		return nil, err
 	}
 
-	return connLog{Logger: d.Logger, conn: conn}, nil
+	return connection{Logger: d.Logger, conn: conn}, nil
 }
 
 func (d *Driver) OpenConnector(name string) (driver.Connector, error) {
@@ -73,12 +73,12 @@ func (c Connector) Driver() driver.Driver {
 	return c.driver
 }
 
-type connLog struct {
+type connection struct {
 	Logger
 	conn driver.Conn
 }
 
-func (c connLog) Prepare(query string) (driver.Stmt, error) {
+func (c connection) Prepare(query string) (driver.Stmt, error) {
 	t := c.Logger.Timer()
 	var err error
 
@@ -90,17 +90,17 @@ func (c connLog) Prepare(query string) (driver.Stmt, error) {
 		return nil, err
 	}
 
-	return stmtLog{Logger: c.Logger, query: query, stmt: stmt}, nil
+	return statement{Logger: c.Logger, query: query, stmt: stmt}, nil
 }
 
-func (c connLog) Close() error {
+func (c connection) Close() error {
 	t := c.Logger.Timer()
 	err := c.conn.Close()
 	c.Logger.ConnClose(t.Stop(), err)
 	return err
 }
 
-func (c connLog) Begin() (driver.Tx, error) {
+func (c connection) Begin() (driver.Tx, error) {
 	t := c.Logger.Timer()
 	var err error
 
@@ -112,10 +112,10 @@ func (c connLog) Begin() (driver.Tx, error) {
 		return nil, err
 	}
 
-	return txLog{Logger: c.Logger, tx: tx}, nil
+	return transaction{Logger: c.Logger, tx: tx}, nil
 }
 
-func (c connLog) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+func (c connection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
 	var (
 		tx  driver.Tx
 		t   = c.Logger.Timer()
@@ -130,7 +130,7 @@ func (c connLog) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx,
 			return nil, err
 		}
 
-		return txLog{Logger: c.Logger, ctx: ctx, tx: tx}, nil
+		return transaction{Logger: c.Logger, ctx: ctx, tx: tx}, nil
 	}
 
 	tx, err = c.conn.Begin()
@@ -138,10 +138,10 @@ func (c connLog) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx,
 		return nil, err
 	}
 
-	return txLog{Logger: c.Logger, ctx: ctx, tx: tx}, nil
+	return transaction{Logger: c.Logger, ctx: ctx, tx: tx}, nil
 }
 
-func (c connLog) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+func (c connection) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	t := c.Logger.Timer()
 	var err error
 
@@ -154,13 +154,13 @@ func (c connLog) PrepareContext(ctx context.Context, query string) (driver.Stmt,
 			return nil, err
 		}
 
-		return stmtLog{Logger: c.Logger, ctx: ctx, stmt: stmt}, nil
+		return statement{Logger: c.Logger, ctx: ctx, stmt: stmt}, nil
 	}
 
 	return c.Prepare(query)
 }
 
-func (c connLog) Exec(query string, dargs []driver.Value) (driver.Result, error) {
+func (c connection) Exec(query string, dargs []driver.Value) (driver.Result, error) {
 	var (
 		t   = c.Logger.Timer()
 		res driver.Result
@@ -175,13 +175,13 @@ func (c connLog) Exec(query string, dargs []driver.Value) (driver.Result, error)
 			return nil, err
 		}
 
-		return resultLog{Logger: c.Logger, result: res}, nil
+		return result{Logger: c.Logger, result: res}, nil
 	}
 
 	return nil, driver.ErrSkip
 }
 
-func (c connLog) ExecContext(ctx context.Context, query string, nvdargs []driver.NamedValue) (driver.Result, error) {
+func (c connection) ExecContext(ctx context.Context, query string, nvdargs []driver.NamedValue) (driver.Result, error) {
 	var (
 		t   = c.Logger.Timer()
 		res driver.Result
@@ -197,7 +197,7 @@ func (c connLog) ExecContext(ctx context.Context, query string, nvdargs []driver
 			return nil, err
 		}
 
-		return resultLog{Logger: c.Logger, ctx: ctx, result: res}, nil
+		return result{Logger: c.Logger, ctx: ctx, result: res}, nil
 	}
 
 	var dargs []driver.Value
@@ -215,7 +215,7 @@ func (c connLog) ExecContext(ctx context.Context, query string, nvdargs []driver
 	return c.Exec(query, dargs)
 }
 
-func (c connLog) Ping(ctx context.Context) error {
+func (c connection) Ping(ctx context.Context) error {
 	t := c.Logger.Timer()
 	var err error
 
@@ -229,7 +229,7 @@ func (c connLog) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c connLog) Query(query string, dargs []driver.Value) (driver.Rows, error) {
+func (c connection) Query(query string, dargs []driver.Value) (driver.Rows, error) {
 	t := c.Logger.Timer()
 	var err error
 
@@ -242,13 +242,13 @@ func (c connLog) Query(query string, dargs []driver.Value) (driver.Rows, error) 
 			return nil, err
 		}
 
-		return rowsLog{Logger: c.Logger, rows: rows}, nil
+		return rowsIterator{Logger: c.Logger, rows: rows}, nil
 	}
 
 	return nil, driver.ErrSkip
 }
 
-func (c connLog) QueryContext(ctx context.Context, query string, nvdargs []driver.NamedValue) (driver.Rows, error) {
+func (c connection) QueryContext(ctx context.Context, query string, nvdargs []driver.NamedValue) (driver.Rows, error) {
 	t := c.Logger.Timer()
 	var err error
 
@@ -261,7 +261,7 @@ func (c connLog) QueryContext(ctx context.Context, query string, nvdargs []drive
 			return nil, err
 		}
 
-		return rowsLog{Logger: c.Logger, ctx: ctx, rows: rows}, nil
+		return rowsIterator{Logger: c.Logger, ctx: ctx, rows: rows}, nil
 	}
 
 	var dargs []driver.Value
@@ -279,7 +279,7 @@ func (c connLog) QueryContext(ctx context.Context, query string, nvdargs []drive
 	return c.Query(query, dargs)
 }
 
-func (c connLog) ResetSession(ctx context.Context) error {
+func (c connection) ResetSession(ctx context.Context) error {
 	if sessionResetter, ok := c.conn.(driver.SessionResetter); ok {
 		return sessionResetter.ResetSession(ctx)
 	}
@@ -287,39 +287,39 @@ func (c connLog) ResetSession(ctx context.Context) error {
 	return driver.ErrSkip
 }
 
-type resultLog struct {
+type result struct {
 	Logger
 	ctx    context.Context
 	result driver.Result
 }
 
-func (r resultLog) LastInsertId() (int64, error) {
+func (r result) LastInsertId() (int64, error) {
 	return r.result.LastInsertId()
 }
 
-func (r resultLog) RowsAffected() (int64, error) {
+func (r result) RowsAffected() (int64, error) {
 	return r.result.RowsAffected()
 }
 
-type stmtLog struct {
+type statement struct {
 	Logger
 	ctx   context.Context
 	query string
 	stmt  driver.Stmt
 }
 
-func (s stmtLog) Close() error {
+func (s statement) Close() error {
 	t := s.Logger.Timer()
 	err := s.stmt.Close()
 	s.Logger.StmtClose(t.Stop(), err)
 	return err
 }
 
-func (s stmtLog) NumInput() int {
+func (s statement) NumInput() int {
 	return s.stmt.NumInput()
 }
 
-func (s stmtLog) Exec(dargs []driver.Value) (driver.Result, error) {
+func (s statement) Exec(dargs []driver.Value) (driver.Result, error) {
 	var (
 		t   = s.Logger.Timer()
 		res driver.Result
@@ -333,10 +333,10 @@ func (s stmtLog) Exec(dargs []driver.Value) (driver.Result, error) {
 		return nil, err
 	}
 
-	return resultLog{Logger: s.Logger, ctx: s.ctx, result: res}, nil
+	return result{Logger: s.Logger, ctx: s.ctx, result: res}, nil
 }
 
-func (s stmtLog) ExecContext(ctx context.Context, nvdargs []driver.NamedValue) (driver.Result, error) {
+func (s statement) ExecContext(ctx context.Context, nvdargs []driver.NamedValue) (driver.Result, error) {
 	var (
 		t   = s.Logger.Timer()
 		res driver.Result
@@ -351,7 +351,7 @@ func (s stmtLog) ExecContext(ctx context.Context, nvdargs []driver.NamedValue) (
 			return nil, err
 		}
 
-		return resultLog{Logger: s.Logger, ctx: ctx, result: res}, nil
+		return result{Logger: s.Logger, ctx: ctx, result: res}, nil
 	}
 
 	var dargs []driver.Value
@@ -369,7 +369,7 @@ func (s stmtLog) ExecContext(ctx context.Context, nvdargs []driver.NamedValue) (
 	return s.Exec(dargs)
 }
 
-func (s stmtLog) Query(dargs []driver.Value) (driver.Rows, error) {
+func (s statement) Query(dargs []driver.Value) (driver.Rows, error) {
 	t := s.Logger.Timer()
 	var err error
 
@@ -381,10 +381,10 @@ func (s stmtLog) Query(dargs []driver.Value) (driver.Rows, error) {
 		return nil, err
 	}
 
-	return rowsLog{Logger: s.Logger, ctx: s.ctx, rows: rows}, nil
+	return rowsIterator{Logger: s.Logger, ctx: s.ctx, rows: rows}, nil
 }
 
-func (s stmtLog) QueryContext(ctx context.Context, nvdargs []driver.NamedValue) (driver.Rows, error) {
+func (s statement) QueryContext(ctx context.Context, nvdargs []driver.NamedValue) (driver.Rows, error) {
 	t := s.Logger.Timer()
 	var err error
 
@@ -397,7 +397,7 @@ func (s stmtLog) QueryContext(ctx context.Context, nvdargs []driver.NamedValue) 
 			return nil, err
 		}
 
-		return rowsLog{Logger: s.Logger, ctx: ctx, rows: rows}, nil
+		return rowsIterator{Logger: s.Logger, ctx: ctx, rows: rows}, nil
 	}
 
 	var dargs []driver.Value
@@ -415,41 +415,41 @@ func (s stmtLog) QueryContext(ctx context.Context, nvdargs []driver.NamedValue) 
 	return s.Query(dargs)
 }
 
-type rowsLog struct {
+type rowsIterator struct {
 	Logger
 	ctx  context.Context
 	rows driver.Rows
 }
 
-func (r rowsLog) Columns() []string {
+func (r rowsIterator) Columns() []string {
 	return r.rows.Columns()
 }
 
-func (r rowsLog) Close() error {
+func (r rowsIterator) Close() error {
 	return r.rows.Close()
 }
 
-func (r rowsLog) Next(dest []driver.Value) error {
+func (r rowsIterator) Next(dest []driver.Value) error {
 	t := r.Logger.Timer()
 	err := r.rows.Next(dest)
 	r.Logger.RowsNext(t.Stop(), dest, err)
 	return err
 }
 
-type txLog struct {
+type transaction struct {
 	Logger
 	ctx context.Context
 	tx  driver.Tx
 }
 
-func (tx txLog) Commit() error {
+func (tx transaction) Commit() error {
 	t := tx.Logger.Timer()
 	err := tx.tx.Commit()
 	tx.Logger.TxCommit(t.Stop(), err)
 	return err
 }
 
-func (tx txLog) Rollback() error {
+func (tx transaction) Rollback() error {
 	t := tx.Logger.Timer()
 	err := tx.tx.Rollback()
 	tx.Logger.TxRollback(t.Stop(), err)

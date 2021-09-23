@@ -11,26 +11,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/danil/equal4"
 	"github.com/danil/sqltee"
 	"github.com/danil/sqltee/examples/sqlteegob"
 	"github.com/danil/sqltee/internal/fakedb"
 )
 
-var testFile = func() string { _, f, _, _ := runtime.Caller(0); return f }()
-
-func line() int { _, _, l, _ := runtime.Caller(1); return l }
-
-var gobTestCases = []struct {
+var gobTests = []struct {
 	name      string
-	line      int
+	line      string
 	expected  string
 	fetch     func(*sql.DB) error
 	benchmark bool
@@ -47,7 +43,7 @@ var gobTestCases = []struct {
 `,
 		fetch: func(db *sql.DB) error {
 			if _, err := db.Exec(`WIPE`); err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			return nil
 		},
@@ -78,39 +74,39 @@ var gobTestCases = []struct {
 `,
 		fetch: func(db *sql.DB) error {
 			if _, err := db.Exec(`CREATE|tbl|id=int64,name=string`); err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			_, err := db.Exec("INSERT|tbl|id=?,name=?", 42, "foo")
 			if err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			rows, err := db.Query(`SELECT|tbl|id|name=?`, "foo")
 			if err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			defer rows.Close()
 			var ids []int64
 			for rows.Next() {
 				var id int64
 				if err := rows.Scan(&id); err != nil {
-					return fmt.Errorf("%#v %s:%d", err, testFile, line())
+					return fmt.Errorf("%#v %s", err, line())
 				}
 				ids = append(ids, id)
 			}
 			if err := rows.Err(); err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			if len(ids) == 0 {
 				return sql.ErrNoRows
 			} else if len(ids) > 1 {
-				return fmt.Errorf("unexpected count, expected: 1, recieved: %d %s:%d", len(ids), testFile, line())
+				return fmt.Errorf("unexpected count, expected: 1, recieved: %d %s", len(ids), line())
 			}
 			if ids[0] != 42 {
-				return fmt.Errorf("unexpected id, expected: 42, recieved: %d %s:%d", ids[0], testFile, line())
+				return fmt.Errorf("unexpected id, expected: 42, recieved: %d %s", ids[0], line())
 			}
 			_, err = db.Exec("WIPE")
 			if err != nil {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			return nil
 		},
@@ -127,8 +123,8 @@ var gobTestCases = []struct {
 		fetch: func(db *sql.DB) error {
 			var x int64
 			err := db.QueryRow(`SELECT|nonexistent_table|nonexistent_column|nonexistent_column=42`).Scan(&x)
-			if !equal4.ErrorEqual(errors.New(`fakedb: SELECT on table "nonexistent_table" references non-existent column "nonexistent_column"`), err) {
-				return fmt.Errorf("%#v %s:%d", err, testFile, line())
+			if fmt.Sprint(errors.New(`fakedb: SELECT on table "nonexistent_table" references non-existent column "nonexistent_column"`)) != fmt.Sprint(err) {
+				return fmt.Errorf("%#v %s", err, line())
 			}
 			return nil
 		},
@@ -136,56 +132,55 @@ var gobTestCases = []struct {
 }
 
 func TestGob(t *testing.T) {
-	for _, tc := range gobTestCases {
-		tc := tc
-		t.Run(fmt.Sprintf("%s:%s", tc.name, strconv.Itoa(tc.line)), func(t *testing.T) {
+	for _, tt := range gobTests {
+		tt := tt
+		t.Run(tt.name+"/"+tt.line, func(t *testing.T) {
 			t.Parallel()
-			linkToExample := fmt.Sprintf("%s:%d", testFile, tc.line)
 
 			buf := buffer{}
 			tmr := func() sqltee.Timer { return timer{duration: 42 * time.Nanosecond} }
 			g := sqlteegob.Gob{Writer: &buf, Topic: "fakedb", Placeholder: "?", NewTimer: tmr}
 			drv := &sqltee.Driver{Driver: fakedb.Driver, Logger: g}
-			connstr := fmt.Sprintf("application_name=TestLog_%d", tc.line)
+			connstr := strings.ReplaceAll(fmt.Sprintf("application_name=TestLog_%s", tt.line), ":", "_")
 
 			c, err := drv.OpenConnector(connstr)
 			if err != nil {
-				t.Fatalf("driver open connector error: %#v %s", err, linkToExample)
+				t.Fatalf("driver open connector error: %#v %s", err, tt.line)
 			}
 
 			db := sql.OpenDB(c)
 			if db.Driver() != drv {
-				t.Fatalf("unexpected database sql driver, expected: %#v, received: %#v %s", drv, db.Driver(), linkToExample)
+				t.Fatalf("unexpected database sql driver, expected: %#v, received: %#v %s", drv, db.Driver(), tt.line)
 			}
 			defer db.Close()
 
-			err = tc.fetch(db)
+			err = tt.fetch(db)
 			if err != nil {
-				t.Fatalf("test case fetch error: %#v %s", err, linkToExample)
+				t.Fatalf("test case fetch error: %#v %s", err, tt.line)
 			}
 
 			db.Close()
 
-			if buf.String() != tc.expected {
-				t.Errorf("unexpected log, expected: %v, recieved: %v %s", tc.expected, buf.String(), linkToExample)
+			if buf.String() != tt.expected {
+				t.Errorf("unexpected log, expected: %v, recieved: %v %s", tt.expected, buf.String(), tt.line)
 			}
 		})
 	}
 }
 
 func BenchmarkGob(b *testing.B) {
-	for _, tc := range gobTestCases {
-		if !tc.benchmark {
+	for _, tt := range gobTests {
+		if !tt.benchmark {
 			continue
 		}
-		b.Run(strconv.Itoa(tc.line), func(b *testing.B) {
+		b.Run(tt.line, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				buf := buffer{}
 
 				tmr := func() sqltee.Timer { return timer{duration: 42 * time.Nanosecond} }
 				g := sqlteegob.Gob{Writer: &buf, Topic: "fakedb", Placeholder: "?", NewTimer: tmr}
 				drv := &sqltee.Driver{Driver: fakedb.Driver, Logger: g}
-				connstr := fmt.Sprintf("application_name=BenchmarkLog_%d", tc.line)
+				connstr := strings.ReplaceAll(fmt.Sprintf("application_name=TestLog_%s", tt.line), ":", "_")
 
 				c, err := drv.OpenConnector(connstr)
 				if err != nil {
@@ -198,7 +193,7 @@ func BenchmarkGob(b *testing.B) {
 				}
 				defer db.Close()
 
-				err = tc.fetch(db)
+				err = tt.fetch(db)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -336,4 +331,14 @@ $`
 	if !r.MatchString(buf.String()) {
 		t.Errorf("unexpected log, expected: %v, recieved: %v", expected, buf.String())
 	}
+}
+
+// New reports file and line number information about function invocations.
+func line() string {
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		return fmt.Sprintf("%s:%d", filepath.Base(file), line)
+	}
+
+	return "It was not possible to recover file and line number information about function invocations!"
 }

@@ -20,42 +20,42 @@ func TestLogFuncSQLOpenDB(_ *testing.T) {
 		_ driver.Connector = &Connector{}
 		// Test sqltee.connLog implements the driver.Pinger interface
 
-		_ driver.Pinger = &connLog{}
-		// Test sqltee.connLog implements the driver.Execer interface
-		_ driver.Execer = &connLog{}
-		// Test sqltee.connLog implements the driver.ExecerContext interface
-		_ driver.ExecerContext = &connLog{}
-		// Test sqltee.connLog implements the driver.Queryer interface
-		_ driver.Queryer = &connLog{}
-		// Test sqltee.connLog implements the driver.QueryerContext interface
-		_ driver.QueryerContext = &connLog{}
-		// Test sqltee.connLog implements the driver.Conn interface
-		_ driver.Conn = &connLog{}
+		_ driver.Pinger = &connection{}
+		// Test sqltee.connection implements the driver.Execer interface
+		_ driver.Execer = &connection{}
+		// Test sqltee.connection implements the driver.ExecerContext interface
+		_ driver.ExecerContext = &connection{}
+		// Test sqltee.connection implements the driver.Queryer interface
+		_ driver.Queryer = &connection{}
+		// Test sqltee.connection implements the driver.QueryerContext interface
+		_ driver.QueryerContext = &connection{}
+		// Test sqltee.connection implements the driver.Conn interface
+		_ driver.Conn = &connection{}
 
-		// Test sqltee.connLog implements the driver.ConnPrepareContext interface
-		_ driver.ConnPrepareContext = &connLog{}
+		// Test sqltee.connection implements the driver.ConnPrepareContext interface
+		_ driver.ConnPrepareContext = &connection{}
 
-		// Test sqltee.connLog implements the driver.ConnBeginTx interface
-		_ driver.ConnBeginTx = &connLog{}
+		// Test sqltee.connection implements the driver.ConnBeginTx interface
+		_ driver.ConnBeginTx = &connection{}
 
-		// Test sqltee.connLog implements the driver.SessionResetter interface
-		_ driver.SessionResetter = &connLog{}
+		// Test sqltee.connection implements the driver.SessionResetter interface
+		_ driver.SessionResetter = &connection{}
 
 		// Test sqltee.logResult implements the driver.Result interface
-		_ driver.Result = &resultLog{}
+		_ driver.Result = &result{}
 
 		// Test sqltee.stmtLog implements the driver.Stmt interface
-		_ driver.Stmt = &stmtLog{}
-		// Test sqltee.stmtLog implements the driver.StmtExecContext interface
-		_ driver.StmtExecContext = &stmtLog{}
-		// Test sqltee.stmtLog implements the driver.StmtQueryContext interface
-		_ driver.StmtQueryContext = &stmtLog{}
+		_ driver.Stmt = &statement{}
+		// Test sqltee.statement implements the driver.StmtExecContext interface
+		_ driver.StmtExecContext = &statement{}
+		// Test sqltee.statement implements the driver.StmtQueryContext interface
+		_ driver.StmtQueryContext = &statement{}
 
 		// FIXME: driver.NamedValueChecker
 		// FIXME: driver.ColumnConverter
 
 		// Test sqltee.logRows implements the driver.Rows interface
-		_ driver.Rows = &rowsLog{}
+		_ driver.Rows = &rowsIterator{}
 
 		// FIXME: driver.RowsNextResultSet
 		// FIXME: driver.RowsColumnTypeScanType
@@ -65,6 +65,6 @@ func TestLogFuncSQLOpenDB(_ *testing.T) {
 		// FIXME: driver.RowsColumnTypePrecisionScale
 
 		// Test sqltee.logTx implements the driver.Tx interface
-		_ driver.Tx = &txLog{}
+		_ driver.Tx = &transaction{}
 	)
 }

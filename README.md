@@ -13,4 +13,4 @@ found in the [LICENSE](./LICENSE) file.
 
 ## Install
 
-    go get github.com/danil/sqltee@v0.32.0
+    go get github.com/danil/sqltee@v0.33.0
