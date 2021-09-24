@@ -191,7 +191,6 @@ func (c connection) ExecContext(ctx context.Context, query string, nvdargs []dri
 	defer func() { c.Logger.ConnExecContext(ctx, t.Stop(), query, nvdargs, res, err) }()
 
 	if execContext, ok := c.conn.(driver.ExecerContext); ok {
-
 		res, err = execContext.ExecContext(ctx, query, nvdargs)
 		if err != nil {
 			return nil, err
