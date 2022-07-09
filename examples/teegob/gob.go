@@ -1,8 +1,8 @@
-// Copyright 2021 The Go Authors. All rights reserved.
+// Copyright 2022 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package sqlteegob
+package teegob
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/danil/sqltee"
-	"github.com/danil/sqltee/sqlteescan"
+	"github.com/danil/sqltee/teescan"
 )
 
 type Gob struct {
@@ -221,11 +221,11 @@ func (g Gob) interpolation(topic string, d time.Duration, query string, dargs []
 
 	var interpolation string
 
-	scan := sqlteescan.GetScanner()
+	scan := teescan.GetScanner()
 	scan.Values = dargs
 	scan.NamedValues = nvdargs
 	scan.Reverse = true
-	defer sqlteescan.PutScanner(scan)
+	defer teescan.PutScanner(scan)
 
 	for scan.Scan() {
 		if interpolation == "" {

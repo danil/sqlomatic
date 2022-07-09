@@ -594,7 +594,7 @@ func (c *fakeConn) PrepareContext(ctx context.Context, query string) (driver.Stm
 			case "WAIT":
 				wait, err := time.ParseDuration(parts[1])
 				if err != nil {
-					return nil, errf("expected section after WAIT to be a duration, got %q %v", parts[1], err)
+					return nil, errf("invalid section after WAIT, to be a duration, got %q %v", parts[1], err)
 				}
 				parts = parts[2:]
 				stmt.wait = wait
