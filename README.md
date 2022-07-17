@@ -3,9 +3,8 @@
 [![Build Status](https://cloud.drone.io/api/badges/pfmt/sqltee/status.svg)](https://cloud.drone.io/pfmt/sqltee)
 [![Go Reference](https://pkg.go.dev/badge/github.com/pfmt/sqltee.svg)](https://pkg.go.dev/github.com/pfmt/sqltee)
 
-SQL [database/sql/driver][] wrapper, execution time logger,
-query interpolator and logger, arguments logger (values, named values,
-transaction options) for Go.
+SQL [database/sql/driver][] wrapping, queries interpolation, execution time
+and arguments logging (values, named values, transaction options) for Go.
 
 Source files are distributed under the BSD-style license.
 
@@ -13,8 +12,8 @@ Source files are distributed under the BSD-style license.
 
 ## About
 
-The software is considered to be at a alpha level of readiness -
-its extremely slow and allocates a lots of memory)
+The software is considered to be at a alpha level of readiness,
+its extremely slow and allocates a lots of memory.
 
 ## Benchmark
 
