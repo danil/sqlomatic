@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pfmt/sqltee"
-	"github.com/pfmt/sqltee/teescan"
+	"github.com/sqltee/sqltee"
+	"github.com/sqltee/sqltee/teescan"
 )
 
 type Gob struct {

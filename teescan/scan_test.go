@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pfmt/sqltee/teescan"
+	"github.com/sqltee/sqltee/teescan"
 )
 
 func TestValueString(t *testing.T) {

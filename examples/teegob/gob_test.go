@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pfmt/sqltee"
-	"github.com/pfmt/sqltee/examples/teegob"
-	"github.com/pfmt/sqltee/internal/fakedb"
+	"github.com/sqltee/sqltee"
+	"github.com/sqltee/sqltee/examples/teegob"
+	"github.com/sqltee/sqltee/internal/fakedb"
 )
 
 var gobTests = []struct {
